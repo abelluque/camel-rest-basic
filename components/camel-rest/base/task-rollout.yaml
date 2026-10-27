@@ -15,6 +15,7 @@ spec:
       default: rest-gateway
   steps:
     - name: restart
+      computeResources: {}
       image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
       script: |
         #!/usr/bin/env bash

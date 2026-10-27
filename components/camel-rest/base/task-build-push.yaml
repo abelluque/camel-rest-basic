@@ -22,6 +22,7 @@ spec:
       emptyDir: {}
   steps:
     - name: build-and-push
+      computeResources: {}
       image: quay.io/buildah/stable:latest
       securityContext:
         capabilities:

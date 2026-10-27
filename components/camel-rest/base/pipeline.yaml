@@ -28,6 +28,7 @@ spec:
   tasks:
     - name: fetch-source
       taskRef:
+        kind: Task
         name: camel-rest-git-clone
       params:
         - name: url
@@ -41,6 +42,7 @@ spec:
       runAfter:
         - fetch-source
       taskRef:
+        kind: Task
         name: camel-rest-maven
       workspaces:
         - name: source
@@ -51,6 +53,7 @@ spec:
       runAfter:
         - maven-package
       taskRef:
+        kind: Task
         name: camel-rest-build-push
       params:
         - name: image
@@ -62,6 +65,7 @@ spec:
       runAfter:
         - build-push
       taskRef:
+        kind: Task
         name: camel-rest-rollout
       params:
         - name: deployment

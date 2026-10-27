@@ -45,7 +45,7 @@ oc apply -k bootstrap
 oc apply -f clusters/default/camel-rest-application.yaml
 ```
 
-La Application apunta a `https://github.com/abelluque/camel-rest-basic.git`, rama `master`, path `components/camel-rest/base`.
+La Application apunta a `https://github.com/abelluque/camel-rest-basic.git`, rama `gitops-feature`, path `components/camel-rest/base`.
 
 Con `selfHeal: true`, borrar el `PipelineRun` lo vuelve a crear y relanza el build. El objeto es inmutable: si hay que cambiar parámetros, borrarlo y dejar que Argo CD lo recree.
 

@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/abelluque/camel-rest-basic.git
-    targetRevision: master
+    targetRevision: gitops-feature
     path: components/camel-rest/base
   destination:
     server: https://kubernetes.default.svc
@@ -20,6 +20,7 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:

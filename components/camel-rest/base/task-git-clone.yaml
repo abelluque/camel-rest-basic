@@ -20,6 +20,7 @@ spec:
       description: Directorio donde queda el código en src/.
   steps:
     - name: clone
+      computeResources: {}
       image: registry.access.redhat.com/ubi9/ubi:latest
       securityContext:
         runAsUser: 0
