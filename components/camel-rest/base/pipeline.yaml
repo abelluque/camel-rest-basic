@@ -1,0 +1,68 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: camel-rest-basic
+  labels:
+    app.kubernetes.io/name: rest-gateway
+    app.kubernetes.io/part-of: camel-rest-basic
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: Clona camel-rest-basic, genera el fat jar y publica rest-gateway en el registro interno.
+  params:
+    - name: git-url
+      type: string
+      default: https://github.com/abelluque/camel-rest-basic
+    - name: git-revision
+      type: string
+      default: master
+    - name: image
+      type: string
+      default: image-registry.openshift-image-registry.svc:5000/camel-rest/rest-gateway:latest
+    - name: deployment-name
+      type: string
+      default: rest-gateway
+  workspaces:
+    - name: source
+    - name: maven-cache
+  tasks:
+    - name: fetch-source
+      taskRef:
+        name: camel-rest-git-clone
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: source
+          workspace: source
+    - name: maven-package
+      runAfter:
+        - fetch-source
+      taskRef:
+        name: camel-rest-maven
+      workspaces:
+        - name: source
+          workspace: source
+        - name: maven-cache
+          workspace: maven-cache
+    - name: build-push
+      runAfter:
+        - maven-package
+      taskRef:
+        name: camel-rest-build-push
+      params:
+        - name: image
+          value: $(params.image)
+      workspaces:
+        - name: source
+          workspace: source
+    - name: rollout
+      runAfter:
+        - build-push
+      taskRef:
+        name: camel-rest-rollout
+      params:
+        - name: deployment
+          value: $(params.deployment-name)
