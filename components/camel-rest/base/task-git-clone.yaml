@@ -26,7 +26,11 @@ spec:
       script: |
         #!/usr/bin/env bash
         set -euo pipefail
-        microdnf install -y git
+        if command -v microdnf >/dev/null 2>&1; then
+          microdnf install -y git
+        else
+          dnf install -y git
+        fi
         dest="$(workspaces.source.path)/src"
         rm -rf "${dest}"
         git clone --branch "$(params.revision)" --depth 1 "$(params.url)" "${dest}"

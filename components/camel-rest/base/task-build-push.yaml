@@ -14,7 +14,7 @@ spec:
       type: string
     - name: runtime-image
       type: string
-      default: registry.access.redhat.com/ubi8/openjdk-11-runtime:latest
+      default: registry.access.redhat.com/ubi8/openjdk-8-runtime:latest
   workspaces:
     - name: source
   volumes:
@@ -24,7 +24,6 @@ spec:
     - name: build-and-push
       image: quay.io/buildah/stable:latest
       securityContext:
-        privileged: true
         capabilities:
           add:
             - SETFCAP

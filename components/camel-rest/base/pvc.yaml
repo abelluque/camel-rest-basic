@@ -13,19 +13,3 @@ spec:
   resources:
     requests:
       storage: 2Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: camel-rest-maven-cache
-  labels:
-    app.kubernetes.io/name: rest-gateway
-    app.kubernetes.io/part-of: camel-rest-basic
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 8Gi
