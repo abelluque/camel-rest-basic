@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: camel-rest-basic
+  labels:
+    app.kubernetes.io/name: rest-gateway
+    app.kubernetes.io/part-of: camel-rest-basic
+  annotations:
+    # El PipelineRun es inmutable. Para repetir el build hay que borrarlo;
+    # con selfHeal, Argo CD lo vuelve a crear.
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  pipelineRef:
+    name: camel-rest-basic
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  timeouts:
+    pipeline: "1h"
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: camel-rest-source
+    - name: maven-cache
+      persistentVolumeClaim:
+        claimName: camel-rest-maven-cache

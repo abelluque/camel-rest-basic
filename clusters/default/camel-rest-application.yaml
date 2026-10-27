@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: camel-rest
+  namespace: openshift-gitops
+  labels:
+    app.kubernetes.io/part-of: camel-rest-basic
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/abelluque/camel-rest-basic.git
+    targetRevision: master
+    path: components/camel-rest/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: camel-rest
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

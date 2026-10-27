@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: camel-rest-git-clone
+  labels:
+    app.kubernetes.io/name: rest-gateway
+    app.kubernetes.io/part-of: camel-rest-basic
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: Clona camel-rest-basic en el workspace del pipeline.
+  params:
+    - name: url
+      type: string
+    - name: revision
+      type: string
+      default: master
+  workspaces:
+    - name: source
+      description: Directorio donde queda el código en src/.
+  steps:
+    - name: clone
+      image: registry.access.redhat.com/ubi9/ubi:latest
+      securityContext:
+        runAsUser: 0
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        microdnf install -y git
+        dest="$(workspaces.source.path)/src"
+        rm -rf "${dest}"
+        git clone --branch "$(params.revision)" --depth 1 "$(params.url)" "${dest}"
+        chmod -R a+rX "${dest}"

@@ -1,0 +1,48 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: camel-rest-maven
+  labels:
+    app.kubernetes.io/name: rest-gateway
+    app.kubernetes.io/part-of: camel-rest-basic
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: Empaqueta rest-gateway con el settings.xml de Red Hat del repositorio.
+  params:
+    - name: goals
+      type: string
+      default: -B -s configuration/settings.xml -DskipTests clean package
+  workspaces:
+    - name: source
+    - name: maven-cache
+  steps:
+    - name: package
+      image: registry.access.redhat.com/ubi8/openjdk-11:latest
+      securityContext:
+        runAsUser: 0
+      env:
+        - name: MAVEN_OPTS
+          value: -Xmx1024m
+      computeResources:
+        requests:
+          cpu: "500m"
+          memory: 1Gi
+        limits:
+          cpu: "2"
+          memory: 2Gi
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        if ! command -v mvn >/dev/null 2>&1; then
+          found="$(find /usr /opt -name mvn -type f 2>/dev/null | head -1)"
+          if [[ -z "${found}" ]]; then
+            echo "mvn is not installed in the builder image" >&2
+            exit 1
+          fi
+          export PATH="$(dirname "${found}"):${PATH}"
+        fi
+        mvn -version
+        cd "$(workspaces.source.path)/src"
+        mvn $(params.goals) -Dmaven.repo.local="$(workspaces.maven-cache.path)/repository"
+        test -f target/rest-gateway-1.0-SNAPSHOT.jar

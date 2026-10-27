@@ -1,0 +1,36 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: camel-rest-rollout
+  labels:
+    app.kubernetes.io/name: rest-gateway
+    app.kubernetes.io/part-of: camel-rest-basic
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: Reinicia el Deployment si ya existe, para que tome el tag recién publicado.
+  params:
+    - name: deployment
+      type: string
+      default: rest-gateway
+  steps:
+    - name: restart
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        ns="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
+        dep="$(params.deployment)"
+        oc_args=(
+          --server=https://kubernetes.default.svc
+          --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          --token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+          -n "${ns}"
+        )
+        current="$(oc "${oc_args[@]}" get "deployment/${dep}" --ignore-not-found -o name)"
+        if [[ -z "${current}" ]]; then
+          echo "Deployment ${dep} is not in ${ns} yet. GitOps will create it against the pushed image."
+          exit 0
+        fi
+        oc "${oc_args[@]}" rollout restart "deployment/${dep}"
+        oc "${oc_args[@]}" rollout status "deployment/${dep}" --timeout=300s

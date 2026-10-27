@@ -1,0 +1,66 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: camel-rest-build-push
+  labels:
+    app.kubernetes.io/name: rest-gateway
+    app.kubernetes.io/part-of: camel-rest-basic
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: Construye la imagen del fat jar y la publica en el registro interno.
+  params:
+    - name: image
+      type: string
+    - name: runtime-image
+      type: string
+      default: registry.access.redhat.com/ubi8/openjdk-11-runtime:latest
+  workspaces:
+    - name: source
+  volumes:
+    - name: varlibcontainers
+      emptyDir: {}
+  steps:
+    - name: build-and-push
+      image: quay.io/buildah/stable:latest
+      securityContext:
+        privileged: true
+        capabilities:
+          add:
+            - SETFCAP
+      volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        cd "$(workspaces.source.path)/src"
+        image="$(params.image)"
+        registry="${image%%/*}"
+        printf '%s\n' \
+          "FROM $(params.runtime-image)" \
+          "COPY target/rest-gateway-1.0-SNAPSHOT.jar /deployments/app.jar" \
+          "ENV JAVA_APP_JAR=app.jar" \
+          "EXPOSE 8080 8081" \
+          > Containerfile
+        export STORAGE_DRIVER=vfs
+        export BUILDAH_ISOLATION=chroot
+        export HOME=/tmp/buildah-home
+        mkdir -p "${HOME}/.docker" "/etc/containers/certs.d/${registry}"
+        token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        auth="$(printf 'unused:%s' "${token}" | base64 -w 0)"
+        printf '{"auths":{"%s":{"auth":"%s"}}}\n' "${registry}" "${auth}" > "${HOME}/.docker/config.json"
+        cp /var/run/secrets/kubernetes.io/serviceaccount/ca.crt "/etc/containers/certs.d/${registry}/ca.crt"
+        buildah bud \
+          --storage-driver vfs \
+          --isolation chroot \
+          --authfile "${HOME}/.docker/config.json" \
+          --tls-verify=true \
+          -f Containerfile \
+          -t "${image}" \
+          .
+        buildah push \
+          --storage-driver vfs \
+          --authfile "${HOME}/.docker/config.json" \
+          --tls-verify=true \
+          "${image}"
