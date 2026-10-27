@@ -14,6 +14,16 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: camel-rest
+  ignoreDifferences:
+    - group: tekton.dev
+      kind: PipelineRun
+      jsonPointers:
+        - /metadata/labels/tekton.dev~1pipeline
+        - /metadata/annotations/chains.tekton.dev~1signed
+        - /metadata/annotations/results.tekton.dev~1record
+        - /metadata/annotations/results.tekton.dev~1result
+        - /metadata/annotations/results.tekton.dev~1stored
+        - /spec/timeouts/pipeline
   syncPolicy:
     automated:
       prune: false
@@ -21,6 +31,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
